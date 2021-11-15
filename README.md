@@ -13,8 +13,6 @@ then use colonml.py with 2 cmd line args
 #Programming in :::ml
 The Grammar ->
 
-multi_step ( exp ) -> evaluate this expression. ("Notice no colon on this call in this version")
-
 :::Apply (exp 1, exp 2) -> standard application with substitution.
 
 :::Lambda(n,t,exp) -> Typed lambda expression with n being a string name and t being a type from the type grammar.
