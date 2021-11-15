@@ -1,15 +1,14 @@
-(multi_step
-       (:::Apply
-          (:::LambdaRec
-              ("factorial"
-              , :::Tint
-              , :::Tint
-              , "n"
-              , :::If
-                  ( :::IsZero (:::Var "n")
-                  , :::Num 1
-                  , :::Mult
-                      ( :::Var "n"
-                      , :::Apply (:::Var "factorial", :::Plus (:::Var "n", :::Num (-1))) )
-                  ) )
-          , :::Num 6 )))
+(:::Apply
+	(:::LambdaRec
+    	("factorial"
+        	, :::TInt
+            , :::TInt
+            , "n"
+            , :::If
+            	( :::IsZero (:::Var "n")
+                	, :::Num 1
+                  	, :::Mult
+                    	( :::Var "n"
+                      	, :::Apply (:::Var "factorial", :::Plus (:::Var "n", :::Num (-1))) )
+                 ))
+	, :::Num 6 ))
