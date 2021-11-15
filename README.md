@@ -1,8 +1,16 @@
 # colonml
-
 Lambda Calculus based "programming langauge" made by me in OCaml, yes the colons are required, thats the point.
 
+#compiling :::ml
 
+after writing a :::ml program ensure you have OCaml and Python downloaded.
+
+then use colonml.py with 2 cmd line args
+  - arg1 cml src file
+  - arg2 name for an exefile
+
+
+#Programming in :::ml
 The Grammar ->
 
 multi_step ( exp ) -> evaluate this expression. ("Notice no colon on this call in this version")
