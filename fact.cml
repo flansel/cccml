@@ -5,10 +5,10 @@
 			, :::TInt
 			, "n"
 			, :::If(
-					  :::IsZero (:::Var "n")
-					, :::Num 1
-					, :::Mult(
-						  :::Var "n"
-						, :::Apply (:::Var "factorial", :::Plus (:::Var "n", :::Num (-1))) )
+				  :::IsZero (:::Var "n")
+				, :::Num 1
+				, :::Mult(
+					  :::Var "n"
+					, :::Apply (:::Var "factorial", :::Plus (:::Var "n", :::Num (-1))) )
 )), :::Num 6 ))
 
