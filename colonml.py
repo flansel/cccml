@@ -8,7 +8,7 @@ def lint_input(p):
 def write_ml_file(p, fn):
     std_begin = "open Colonml_interpreter\n let ptype () = type_check [] ( "
     std_eval = "let program () = multi_step("
-    std_end = "\nlet () = ignore(ptype()); print_endline(string_of_exp (program()));"
+    std_end = "\nlet () = ignore(ptype()); ignore(program());"
     p = std_begin + p + ")\n" + std_eval + p + ")\n" + std_end
     f = open(fn+".ml", "w")
     f.write(p)

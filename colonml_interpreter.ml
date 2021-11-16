@@ -24,7 +24,9 @@ type exp =
     | CCCLambdaRec of string * typ * typ * string * exp
     | CCCDiv of exp * exp
     | CCCTry of exp * exp
-    | CCCRaiseDivByZero of typ * exp;;
+    | CCCRaiseDivByZero of typ * exp
+    | CCCStringify of exp
+    | CCCSub of exp * exp;;
 
 exception Eval_error;;
 
@@ -48,7 +50,8 @@ let rec fvs (e : exp) = match e with
     | CCCFalse -> []
     | CCCNum n -> []
     | CCCVar n -> [n]
-    | CCCIsZero e -> fvs e
+    | CCCIsZero e1 -> fvs e1
+    | CCCStringify e1 -> fvs e1
     | CCCPlus(e1,e2) -> (fvs e1)@(fvs e2) 
     | CCCMult(e1,e2) -> (fvs e1)@(fvs e2)
     | CCCIf(e1,e2,e3) -> (fvs e1)@(fvs e2)@(fvs e3)
@@ -57,7 +60,8 @@ let rec fvs (e : exp) = match e with
     | CCCLambdaRec(f,t1,t2,x,e1) -> my_filter f (my_filter x (fvs e1))
     | CCCDiv(e1,e2) -> (fvs e1)@(fvs e2)
     | CCCTry(e1,e2) -> (fvs e1)@(fvs e2)
-    | CCCRaiseDivByZero(t1,e1) -> fvs e1;;
+    | CCCRaiseDivByZero(t1,e1) -> fvs e1
+    | CCCSub(e1,e2) -> (fvs e1)@(fvs e2);;
 (*
  * Substitute e2 into e1 for x
  *)
@@ -68,6 +72,7 @@ let rec substitution (e1 : exp) (x : string) (e2 : exp) = match e1 with
     | CCCNum n -> CCCNum n
     | CCCVar name -> if name = x then e2 else CCCVar name
     | CCCIsZero ex1 -> CCCIsZero (substitution ex1 x e2)
+    | CCCStringify ex1 -> CCCStringify (substitution ex1 x e2)
     | CCCPlus(ex1,ex2) -> CCCPlus(substitution ex1 x e2, substitution ex2 x e2)
     | CCCMult(ex1,ex2) -> CCCMult(substitution ex1 x e2, substitution ex2 x e2)
     | CCCIf(ex1,ex2,ex3) -> CCCIf(substitution ex1 x e2, substitution ex2 x e2, substitution ex3 x e2)
@@ -76,6 +81,7 @@ let rec substitution (e1 : exp) (x : string) (e2 : exp) = match e1 with
     | CCCLambdaRec(f,t1,t2,v,ex) -> if v = x || f = x then ex else if List.mem v (fvs e2) || List.mem f (fvs e2) then raise Substitution_error else (substitution ex x e2)
     | CCCDiv(ex1,ex2) -> CCCDiv(substitution ex1 x e2, substitution ex2 x e2)
     | CCCTry(ex1,ex2) -> CCCTry(substitution ex1 x e2, substitution ex2 x e2)
+    | CCCSub(ex1,ex2) -> CCCSub(substitution ex1 x e2, substitution ex2 x e2)
     | CCCRaiseDivByZero(t1,ex) -> CCCRaiseDivByZero(t1, substitution ex x e2);; 
 
 (*
@@ -84,8 +90,8 @@ let rec substitution (e1 : exp) (x : string) (e2 : exp) = match e1 with
 let rec string_of_exp (e:exp) = match e with
     | CCCVar x -> "CCCVar" ^ x
     | CCCNum n -> string_of_int n
-    | CCCTrue -> "true"
-    | CCCFalse -> "false"
+    | CCCTrue -> "CCCTrue"
+    | CCCFalse -> "CCCFalse"
     | CCCPlus(e1,e2) -> "(" ^ string_of_exp e1 ^ " + " ^ string_of_exp e2 ^ ")"
     | CCCIf(e1, e2, e3) -> "if " ^ string_of_exp e1 ^ " then " ^ string_of_exp e2 ^ " else " ^ string_of_exp e3
     | CCCMult(e1, e2) ->  "(" ^ string_of_exp e1 ^ " * " ^ string_of_exp e2 ^ ")"
@@ -95,11 +101,14 @@ let rec string_of_exp (e:exp) = match e with
     | CCCLambdaRec(f,t1,t2,x,ex) -> "CCCLambdaRec()"
     | CCCDiv(e1,e2) -> "CCCDiv("^string_of_exp e1^","^string_of_exp e2^")"
     | CCCTry(e1,e2) -> "CCCTry("^string_of_exp e1^","^string_of_exp e2^")"
-    | CCCRaiseDivByZero(t1,e1) -> "CCCRaiseDivByZero(CCCTInt,"^string_of_exp e1^")";;
+    | CCCRaiseDivByZero(t1,e1) -> "CCCRaiseDivByZero(CCCTInt,"^string_of_exp e1^")"
+    | CCCSub(e1,e2) -> "("^string_of_exp e1^" - "^string_of_exp e2^")" 
+    | CCCStringify(e1) -> "CCCStringify("^string_of_exp e1^")";;
 
 (*
  * Small step reduction for our grammar
  *)
+
 let rec step (e : exp) = (*print_endline ("step: "^(string_of_exp e));*) match e with
     | CCCTrue -> raise Eval_error
     | CCCFalse -> raise Eval_error
@@ -115,6 +124,11 @@ let rec step (e : exp) = (*print_endline ("step: "^(string_of_exp e));*) match e
     | CCCPlus(CCCNum n1, CCCRaiseDivByZero(t1,e1)) -> CCCRaiseDivByZero(t1,e1)
     | CCCPlus(CCCNum n1, e1) -> CCCPlus(CCCNum n1, step e1) 
     | CCCPlus(e1, e2) -> CCCPlus(step e1, e2)
+    | CCCSub(CCCNum n1, CCCNum n2) -> CCCNum ((n1-n2))
+    | CCCSub(CCCRaiseDivByZero(t1,e1), e2) -> CCCRaiseDivByZero(t1,e1)
+    | CCCSub(CCCNum n1, CCCRaiseDivByZero(t1,e1)) -> CCCRaiseDivByZero(t1,e1)
+    | CCCSub(CCCNum n1, e1) -> CCCSub(CCCNum n1, step e1) 
+    | CCCSub(e1, e2) -> CCCSub(step e1, e2)
     | CCCMult(CCCNum n1, CCCNum n2) -> CCCNum ((n1*n2))
     | CCCMult(CCCRaiseDivByZero(t1,e1), e2) -> CCCRaiseDivByZero(t1,e1)
     | CCCMult(CCCNum n1, CCCRaiseDivByZero(t1,e1)) -> CCCRaiseDivByZero(t1,e1)
@@ -139,6 +153,7 @@ let rec step (e : exp) = (*print_endline ("step: "^(string_of_exp e));*) match e
     | CCCTry(e1,e2) -> CCCTry(step e1,e2)
     | CCCRaiseDivByZero(t1, CCCRaiseDivByZero(t2,e1)) -> CCCRaiseDivByZero(t2,e1)
     | CCCRaiseDivByZero(t1,e1) -> CCCRaiseDivByZero(t1, step e1)
+    | CCCStringify(e1) -> ignore(print_endline(string_of_exp e1)); e1
     | _ -> failwith "wtf";;
 
 (*
@@ -149,10 +164,19 @@ let rec multi_step (e : exp) = (*print_endline ("multi "^(string_of_exp e));*) m
     | CCCTrue -> CCCTrue
     | CCCFalse -> CCCFalse
     | CCCNum n -> CCCNum n
+    | CCCStringify(CCCTrue) -> ignore(print_endline "CCCTrue"); CCCTrue
+    | CCCStringify(CCCFalse) -> ignore(print_endline "CCCFalse"); CCCFalse
+    | CCCStringify(CCCNum n) -> ignore(print_endline (string_of_exp (CCCNum(n)))); CCCNum(n)
+    | CCCStringify(CCCLambda(n,t,ex)) -> ignore(print_endline (string_of_exp (CCCLambda(n,t,ex)))); CCCLambda(n,t,ex)
+    | CCCStringify(CCCLambdaRec(f,t1,t2,x,ex)) -> ignore(print_endline (string_of_exp (CCCLambdaRec(f,t1,t2,x,ex)))); CCCLambdaRec(f,t1,t2,x,ex)
     | CCCLambda(n,t,ex) -> CCCLambda(n,t,ex)
     | CCCLambdaRec(f,t1,t2,x,ex) -> CCCLambdaRec(f,t1,t2,x,ex)
-    | CCCRaiseDivByZero(t1,CCCNum n) -> CCCRaiseDivByZero(t1,CCCNum n)
+    | CCCRaiseDivByZero(t1,CCCNum n) -> CCCRaiseDivByZero(t1,CCCNum n) 
+    | CCCStringify(e1) -> multi_step (CCCStringify(step e1)) 
     | e1 -> multi_step (step e1);;
+
+
+
 
 (*
  * Validate the type of expressions is correct
@@ -174,7 +198,9 @@ let rec type_check (te : type_environment)(e : exp) = match e with
     | CCCLambdaRec(f,t1,t2,n,ex) -> if (type_check ([(f,CCCTArrow(t1,t2))]@[(n,t1)]@te) ex) = t2 then CCCTArrow(t1,t2) else raise Type_error
     | CCCDiv(e1,e2) -> if (type_check te e1 = CCCTInt && type_check te e2 = CCCTInt) then CCCTInt else raise Type_error
     | CCCTry(e1,e2) -> let z = type_check te e1 in if type_check te e2 = CCCTArrow(CCCTInt, z) then z else raise Type_error
-    | CCCRaiseDivByZero(t1,e1) -> t1;; 
+    | CCCRaiseDivByZero(t1,e1) -> t1
+    | CCCStringify e1 -> type_check te e1
+    | CCCSub(e1, e2) -> if (type_check te e1 = CCCTInt && type_check te e2 = CCCTInt) then CCCTInt else raise Type_error;; 
 (*
 let lst =  fvs ((CCCLambda ("x", CCCTInt, CCCPlus (CCCVar "x", CCCVar "y"))));;
 let () = List.iter (printf "%s ") lst; print_endline ": free vars";;

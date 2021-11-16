@@ -11,7 +11,15 @@ then use colonml.py with 2 cmd line args
 
 
 #Programming in :::ml
+
+The compiled program should be one large function compisition that evaluates to a value term.
+
 The Grammar ->
+
+:::Stringify (e) -> This has two related but distinct functions. As a top level operator this prints the final
+					result of the expression to the screen. In any postition other than top level it prints a
+					current picture of the "stack" of the expression. Play around with it to see exactly what I
+					mean by this behavior.
 
 :::Apply (exp 1, exp 2) -> standard application with substitution.
 
@@ -25,11 +33,13 @@ The Grammar ->
 
 :::Plus(e1,e2)
 
+:::Sub(e1,e2)
+
 :::Div(e1,e2)
 
 :::IsZero(e1)
 
-:::Var x
+:::Var "x"
 
 :::Num n
 
@@ -39,7 +49,7 @@ The Grammar ->
 
 Type Grammer ->
 
-:::Tint
+:::TInt
 
 :::TBool
 
