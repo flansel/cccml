@@ -1,16 +1,14 @@
 :::Stringify(:::Apply
-    (:::LambdaRec
-        ("fib"
-            , :::TInt
-            , :::TInt
-            , "n" 
-            , :::If(
-                :::IsZero(:::Var "n")
-                , :::Num 1
-                , :::If(
-					:::IsZero(:::Stringify(:::Sub(:::Var "n",:::Num(1)))) 
-                    , :::Num 1
-                    , :::Plus(:::Apply(:::Var "fib", :::Sub(:::Var "n", :::Num(1)))
-                                    , :::Apply(:::Var "fib", :::Sub(:::Var "n", :::Num(2))))
-                ))), :::Num 7)
-)
+	(:::LambdaRec(
+			  "fib"
+			, :::TInt
+			, :::TInt
+			, "n" 
+			, :::If(
+				  :::IsZero(:::Var "n")
+				, :::Num 1
+				, :::If(
+					  :::IsZero(:::Stringify(:::Sub(:::Var "n",:::Num(1)))) 
+					, :::Num 1
+					, :::Plus(:::Apply(:::Var "fib", :::Sub(:::Var "n", :::Num(1))), :::Apply(:::Var "fib", :::Sub(:::Var "n", :::Num(2))))
+))), :::Num 7))
